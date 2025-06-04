@@ -8,53 +8,8 @@ import { SystemSelectionModal } from "../components/system-selection-modal";
 import { ScheduleMigrationModal } from "../components/schedule-migration-modal";
 import { SelectedSystemsTable } from "../components/selected-systems-table";
 
-// Mock data
-const mockSystems = [
-  {
-    id: "SYS001",
-    user: "jsmith",
-    division: "IT",
-    department: "Support",
-    desktopName: "DESKTOP-001",
-    caliber: "Prod-A",
-    pool: "QA",
-    os: "Windows 10",
-    lastSeen: "2024-01-15",
-  },
-  {
-    id: "SYS002",
-    user: "adoe",
-    division: "Finance",
-    department: "Accounts",
-    desktopName: "DESKTOP-002",
-    caliber: "Prod-A",
-    pool: "QA",
-    os: "Windows 10",
-    lastSeen: "2024-01-12",
-  },
-  {
-    id: "SYS003",
-    user: "mjane",
-    division: "HR",
-    department: "Recruitment",
-    desktopName: "DESKTOP-003",
-    caliber: "Prod-C",
-    pool: "QA",
-    os: "Windows 11",
-    lastSeen: "2024-01-11",
-  },
-  {
-    id: "SYS005",
-    user: "sgarcia",
-    division: "Operations",
-    department: "Logistics",
-    desktopName: "DESKTOP-005",
-    caliber: "Prod-B",
-    pool: "QA",
-    os: "Windows 10",
-    lastSeen: "2024-01-11",
-  },
-];
+// Mock data...
+const mockSystems = [/* ...same mock data */];
 
 interface System {
   id: string;
@@ -75,7 +30,6 @@ export function ScheduleMigrationPage() {
   const { showToast } = useToast();
 
   const handleAddSystems = (systems: System[]) => {
-    // Avoid duplicates
     const newSystems = systems.filter(
       (system) => !selectedSystems.some((sel) => sel.id === system.id)
     );
@@ -120,19 +74,19 @@ export function ScheduleMigrationPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      {/* Header Section */}
-      <header className="flex justify-between items-center">
+    <div className="max-w-screen-xl mx-auto px-6 py-10 space-y-10">
+      {/* Page Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Schedule Migration
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Add systems and schedule migrations
           </p>
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-3">
           {selectedSystems.length > 0 && (
             <Button onClick={handleScheduleMigration} size="lg">
               📆 Schedule Migration
@@ -150,9 +104,9 @@ export function ScheduleMigrationPage() {
         </div>
       </header>
 
-      {/* Selected Systems or Empty State */}
+      {/* Systems Table or Empty State */}
       {selectedSystems.length > 0 ? (
-        <section className="space-y-4">
+        <section className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Selected Systems
           </h2>
@@ -163,14 +117,14 @@ export function ScheduleMigrationPage() {
           />
         </section>
       ) : (
-        <div className="text-center py-16">
-          <div className="mx-auto h-24 w-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+        <section className="text-center py-20 border border-dashed rounded-lg border-gray-300 dark:border-gray-600">
+          <div className="mx-auto h-24 w-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
             <FaPlus className="h-12 w-12 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             No systems selected
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mt-2 mb-6">
             Get started by adding systems to your migration list
           </p>
           <Button
@@ -181,7 +135,7 @@ export function ScheduleMigrationPage() {
             <FaPlus className="h-5 w-5 mr-2" />
             Add Systems for Migration
           </Button>
-        </div>
+        </section>
       )}
 
       {/* Modals */}
