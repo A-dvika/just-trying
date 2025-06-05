@@ -1,5 +1,4 @@
-// file: components/SystemSelectionModal.tsx
-
+// components/SystemSelectionModal.tsx
 import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@gs-ux-uitoolkit-react/button'
 import {
@@ -15,7 +14,7 @@ import { Checkbox } from '@gs-ux-uitoolkit-react/checkbox'
 import { useToast } from '../hooks/useToast'
 
 // ---------------
-// 1) Define your System interface (make sure it matches your backend/props exactly)
+// 1) System interface (same as before)
 // ---------------
 export interface System {
   id: string
@@ -32,7 +31,7 @@ export interface System {
 }
 
 // ---------------
-// 2) Define the props for your modal
+// 2) Modal props
 // ---------------
 interface SystemSelectionModalProps {
   isOpen: boolean
@@ -42,7 +41,7 @@ interface SystemSelectionModalProps {
 }
 
 // ---------------
-// 3) The cleaned-up, responsive modal component
+// 3) Improved, responsive modal component
 // ---------------
 export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
   isOpen,
@@ -50,13 +49,10 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
   onAddSystems,
   availableSystems,
 }) => {
-  // --- local state ---
-  const [selectionMethod, setSelectionMethod] = useState<'search' | 'bulk'>(
-    'search'
-  )
+  // — Local state hooks —
+  const [selectionMethod, setSelectionMethod] = useState<'search' | 'bulk'>('search')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [filteredSystems, setFilteredSystems] =
-    useState<System[]>(availableSystems)
+  const [filteredSystems, setFilteredSystems] = useState<System[]>(availableSystems)
   const [selectedSystemIds, setSelectedSystemIds] = useState<string[]>([])
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -64,10 +60,10 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
 
   const { showToast } = useToast()
 
-  // --- 4) Whenever searchQuery or selectionMethod changes, re‐filter on text search ---
+  // — 4) Text‐search filtering whenever searchQuery or availableSystems changes —
   useEffect(() => {
     if (selectionMethod === 'search') {
-      if (searchQuery.trim().length > 0) {
+      if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         const matched = availableSystems.filter((sys) => {
           return (
@@ -78,30 +74,26 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
         })
         setFilteredSystems(matched)
       } else {
-        // empty query → show all
         setFilteredSystems(availableSystems)
       }
       setCurrentPage(1)
     }
   }, [searchQuery, selectionMethod, availableSystems])
 
-  // --- 5) Handle CSV file upload for “bulk” mode ---
+  // — 5) CSV file upload for “bulk” mode —
   const handleFileUpload = useCallback(
     (file: File) => {
       setUploadedFile(file)
       const reader = new FileReader()
       reader.onload = (e) => {
         const content = e.target?.result as string
-        // Split lines by newline
-        const lines = content.split('\n')
-        // Trim out empty lines
-        const users = lines.map((line) => line.trim()).filter((l) => l.length > 0)
-        // Filter availableSystems where either user or desktopName matches any of these lines
+        const lines = content.split('\n').map((l) => l.trim()).filter((l) => l.length > 0)
         const matched = availableSystems.filter((sys) =>
-          users.some((u) => {
+          lines.some((u) => {
+            const lower = u.toLowerCase()
             return (
-              sys.user.toLowerCase().includes(u.toLowerCase()) ||
-              sys.desktopName.toLowerCase().includes(u.toLowerCase())
+              sys.user.toLowerCase().includes(lower) ||
+              sys.desktopName.toLowerCase().includes(lower)
             )
           })
         )
@@ -109,7 +101,7 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
         setCurrentPage(1)
         showToast({
           status: 'success',
-          message: `Found ${matched.length} matching systems from ${users.length} entries`,
+          message: `Found ${matched.length} matching system${matched.length !== 1 ? 's' : ''} from ${lines.length} entr${lines.length !== 1 ? 'ies' : 'y'}`,
         })
       }
       reader.readAsText(file)
@@ -117,43 +109,36 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
     [availableSystems, showToast]
   )
 
-  // --- 6) Checkbox handler for each row ---
+  // — 6) Row checkbox handler —
   const handleCheckboxChange = (id: string, checked: boolean) => {
     setSelectedSystemIds((prev) =>
       checked ? [...prev, id] : prev.filter((key) => key !== id)
     )
   }
 
-  // --- 7) “Select All” logic on the current page →
-  //     If you check the header checkbox, add all IDs from current page
-  //     If you uncheck it, remove those IDs from the selected list
+  // — Pagination logic —
   const paginatedSystems = filteredSystems.slice(
     (currentPage - 1) * entriesPerPage,
     currentPage * entriesPerPage
   )
   const totalPages = Math.ceil(filteredSystems.length / entriesPerPage)
 
+  // — “Select All” in current page —
   const handleSelectAll = (checked: boolean) => {
+    const pageIds = paginatedSystems.map((sys) => sys.user)
     if (checked) {
-      // add all IDs from the current page
-      const pageIds = paginatedSystems.map((sys) => sys.user)
       setSelectedSystemIds((prev) => Array.from(new Set([...prev, ...pageIds])))
     } else {
-      // remove each id in this page from selected list
-      const pageIds = paginatedSystems.map((sys) => sys.user)
       setSelectedSystemIds((prev) => prev.filter((id) => !pageIds.includes(id)))
     }
   }
 
-  // --- 8) “Add to Migration List” button: send back actual System objects,
-  //     then clear local selections so next time we start fresh.
+  // — Add to migration list button —
   const handleAddToMigrationList = () => {
-    const systemsToAdd = availableSystems.filter((sys) =>
-      selectedSystemIds.includes(sys.user)
-    )
-    onAddSystems(systemsToAdd)
+    const toAdd = availableSystems.filter((sys) => selectedSystemIds.includes(sys.user))
+    onAddSystems(toAdd)
 
-    // Reset everything
+    // Reset local state
     setSelectedSystemIds([])
     setSearchQuery('')
     setUploadedFile(null)
@@ -161,23 +146,41 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
     setCurrentPage(1)
   }
 
-  // --- 9) Main JSX return ---
+  // — JSX Return —
   return (
     <Modal
       visible={isOpen}
       onVisibilityToggle={onClose}
-      className="w-full max-w-6xl mx-auto my-4"
+      className="w-full max-w-3xl mx-auto my-6"
     >
-      <ModalHeader>Select Systems to Schedule Migration</ModalHeader>
-      <ModalBody className="h-[80vh] overflow-y-auto">
-        <div className="space-y-6 p-4">
-          {/* === Selection Method Radios === */}
-          <div className="flex flex-wrap items-center space-x-4">
+      {/* — Header with “×” close icon — */}
+      <ModalHeader className="flex justify-between items-center">
+        <span className="text-lg font-medium">Select Systems to Schedule Migration</span>
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          aria-label="Close modal"
+        >
+          ×
+        </button>
+      </ModalHeader>
+
+      <ModalBody className="h-[75vh] overflow-y-auto px-4 pb-4">
+        <div className="space-y-6">
+          {/* === 1) Radio toggle: “Search” vs “Bulk” === */}
+          <div className="flex items-center space-x-6">
             <Radio
               name="method"
               value="search"
               checked={selectionMethod === 'search'}
-              onChange={() => setSelectionMethod('search')}
+              onChange={() => {
+                setSelectionMethod('search')
+                setUploadedFile(null)
+                setSelectedSystemIds([])
+                setSearchQuery('')
+                setFilteredSystems(availableSystems)
+                setCurrentPage(1)
+              }}
               className="inline-flex"
             >
               Search a Single System
@@ -188,7 +191,6 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
               checked={selectionMethod === 'bulk'}
               onChange={() => {
                 setSelectionMethod('bulk')
-                // whenever switching to bulk, clear search text and show all or keep previous?
                 setSearchQuery('')
                 setFilteredSystems(availableSystems)
                 setSelectedSystemIds([])
@@ -200,29 +202,29 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
             </Radio>
           </div>
 
-          {/* === Search Input (only if selectionMethod === "search") === */}
+          {/* === 2) Search Input (only if “search”) === */}
           {selectionMethod === 'search' && (
             <Input
               placeholder="Search by User, Desktop Name or Division"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500"
             />
           )}
 
-          {/* === Bulk Upload Input (only if selectionMethod === "bulk") === */}
+          {/* === 3) File Upload (only if “bulk”) === */}
           {selectionMethod === 'bulk' && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {uploadedFile ? (
-                <div className="flex items-center justify-between space-x-4">
-                  <p className="text-gray-700">Uploaded File: {uploadedFile.name}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-700 truncate">{uploadedFile.name}</p>
                   <Button
                     onClick={() => {
                       setUploadedFile(null)
                       setFilteredSystems(availableSystems)
                       setCurrentPage(1)
                     }}
-                    className="bg-red-500 hover:bg-red-600 text-white"
+                    className="border border-red-500 text-red-500 hover:bg-red-50"
                   >
                     Remove File
                   </Button>
@@ -233,71 +235,63 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
                   accept=".csv,.xlsx,.xls"
                   onChange={(e) => {
                     const file = e.target.files?.[0]
-                    if (file) {
-                      handleFileUpload(file)
-                    }
+                    if (file) handleFileUpload(file)
                   }}
                   className="block w-full text-sm text-gray-500
-                             file:py-2 file:px-4 file:border file:border-gray-300
-                             file:rounded file:text-sm file:font-semibold
+                             file:mr-4 file:py-2 file:px-4
+                             file:rounded-md file:border file:border-gray-300
+                             file:text-sm file:font-medium
                              file:bg-gray-50 hover:file:bg-gray-100"
                 />
               )}
             </div>
           )}
 
-          {/* === Table of filteredSystems (paginated) === */}
-          <div className="mt-4 overflow-x-auto">
-            <Table bordered striped className="min-w-full">
-              <thead className="bg-gray-100">
+          {/* === 4) Systems Table (fixed-height, vertical scroll) === */}
+          <div className="border border-gray-200 rounded-md overflow-y-auto h-[350px]">
+            <Table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="p-2">
+                  <th className="px-4 py-2 w-10">
                     <Checkbox
                       checked={
                         paginatedSystems.length > 0 &&
-                        paginatedSystems.every((s) =>
-                          selectedSystemIds.includes(s.user)
-                        )
+                        paginatedSystems.every((s) => selectedSystemIds.includes(s.user))
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="p-2">User</th>
-                  <th className="p-2">Division</th>
-                  <th className="p-2">Department</th>
-                  <th className="p-2">Desktop Name</th>
-                  <th className="p-2">Caliber</th>
-                  <th className="p-2">Mapped User</th>
-                  <th className="p-2">Pool</th>
-                  <th className="p-2">Datacenter</th>
-                  <th className="p-2">Cabinet</th>
-                  <th className="p-2">Hypervisor</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">User</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Division</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Department</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Desktop Name</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Caliber</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Mapped User</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Pool</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Datacenter</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Cabinet</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Hypervisor</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedSystems.map((sys) => (
-                  <tr
-                    key={sys.user}
-                    className="border-b hover:bg-gray-50"
-                  >
-                    <td className="p-2">
+                  <tr key={sys.user} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
                       <Checkbox
                         checked={selectedSystemIds.includes(sys.user)}
-                        onChange={(e) =>
-                          handleCheckboxChange(sys.user, e.target.checked)
-                        }
+                        onChange={(e) => handleCheckboxChange(sys.user, e.target.checked)}
                       />
                     </td>
-                    <td className="p-2">{sys.user}</td>
-                    <td className="p-2">{sys.division}</td>
-                    <td className="p-2">{sys.department}</td>
-                    <td className="p-2">{sys.desktopName}</td>
-                    <td className="p-2">{sys.caliber}</td>
-                    <td className="p-2">{sys.mappedUser}</td>
-                    <td className="p-2">{sys.pool}</td>
-                    <td className="p-2">{sys.datacenter}</td>
-                    <td className="p-2">{sys.cabinet}</td>
-                    <td className="p-2">{sys.hypervisor}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.user}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.division}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.department}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.desktopName}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.caliber}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.mappedUser}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.pool}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.datacenter}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.cabinet}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{sys.hypervisor}</td>
                   </tr>
                 ))}
 
@@ -305,7 +299,7 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
                   <tr>
                     <td
                       colSpan={11}
-                      className="p-4 text-center text-gray-500"
+                      className="px-4 py-6 text-center text-gray-500"
                     >
                       No systems found.
                     </td>
@@ -315,15 +309,15 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
             </Table>
           </div>
 
-          {/* === Pagination Controls === */}
+          {/* === 5) Pagination Controls === */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-4 mt-4">
+            <div className="flex items-center justify-center space-x-4">
               <Button
                 onClick={() =>
                   currentPage > 1 && setCurrentPage(currentPage - 1)
                 }
                 disabled={currentPage === 1}
-                className="bg-gray-500 hover:bg-gray-600 text-white disabled:opacity-50"
+                className="border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
               >
                 Previous
               </Button>
@@ -335,14 +329,14 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
                   currentPage < totalPages && setCurrentPage(currentPage + 1)
                 }
                 disabled={currentPage === totalPages}
-                className="bg-gray-500 hover:bg-gray-600 text-white disabled:opacity-50"
+                className="border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
               >
                 Next
               </Button>
             </div>
           )}
 
-          {/* === Selected‐Systems Summary === */}
+          {/* === 6) Selected count summary === */}
           {selectedSystemIds.length > 0 && (
             <div className="text-sm text-gray-700">
               {selectedSystemIds.length} system
@@ -352,18 +346,18 @@ export const SystemSelectionModal: React.FC<SystemSelectionModalProps> = ({
         </div>
       </ModalBody>
 
-      {/* === Footer Buttons === */}
-      <ModalFooter className="flex justify-end space-x-4 p-6">
+      {/* — Footer Buttons — */}
+      <ModalFooter className="flex justify-end space-x-4 px-4 pb-4 pt-2">
         <Button
           onClick={onClose}
-          className="bg-gray-500 hover:bg-gray-600 text-white"
+          className="border border-gray-700 text-gray-700 hover:bg-gray-100"
         >
           Cancel
         </Button>
         <Button
           onClick={handleAddToMigrationList}
           disabled={selectedSystemIds.length === 0}
-          className="bg-green-500 hover:bg-green-600 text-white disabled:opacity-50"
+          className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
         >
           Add to Migration List
         </Button>
