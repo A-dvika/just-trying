@@ -4,22 +4,26 @@
 
 import React, { useState, useCallback, useEffect } from "react"
 import { Search, Upload, X } from "lucide-react"
-import {
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@gs-ux-uitoolkit-react/modal"
+
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "@gs-ux-uitoolkit-react/modal"
 import { Button } from "@gs-ux-uitoolkit-react/button"
 import { Input } from "@gs-ux-uitoolkit-react/input"
 import { Label } from "@gs-ux-uitoolkit-react/label"
 import { Radio } from "@gs-ux-uitoolkit-react/radio"
 import { Checkbox } from "@gs-ux-uitoolkit-react/checkbox"
+
+// Import the GSUI DataGrid and related types:
+import {
+  DataGrid,
+  DataGridColumnDef,
+  DataGridRowSelectionModel,
+} from "@gs-ux-uitoolkit-react/datagrid"
+
 import { useToast } from "../hooks/useToast"
 
-// ---------------
-// 1) System interface (same shape as your Shadcn version)
-// ---------------
+// -----------------------------------------
+// 1) Your System interface (fields used below)
+// -----------------------------------------
 export interface System {
   id: string
   user: string
@@ -28,13 +32,14 @@ export interface System {
   desktopName: string
   caliber: string
   pool: string
-  os: string
-  lastSeen: string
+  datacenter: string
+  cabinet: string
+  hypervisor: string
 }
 
-// ---------------
-// 2) Props for the GSUI version of the modal
-// ---------------
+// -----------------------------------------
+// 2) Props for the modal
+// -----------------------------------------
 interface SystemSelectionModalProps {
   isOpen: boolean
   onClose: () => void
@@ -42,19 +47,87 @@ interface SystemSelectionModalProps {
   availableSystems: System[]
 }
 
-// ---------------
-// 3) GSUI-based component, styled to match the Shadcn design as closely as possible
-// ---------------
+// -----------------------------------------
+// 3) Define DataGrid column definitions once
+//    (make each column filterable: true)
+// -----------------------------------------
+const columns: DataGridColumnDef<System>[] = [
+  {
+    field: "user",
+    headerName: "User",
+    minWidth: 120,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "division",
+    headerName: "Division",
+    minWidth: 120,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "department",
+    headerName: "Department",
+    minWidth: 140,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "desktopName",
+    headerName: "Desktop Name",
+    minWidth: 140,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "caliber",
+    headerName: "Caliber",
+    minWidth: 100,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "pool",
+    headerName: "Pool",
+    minWidth: 100,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "datacenter",
+    headerName: "Datacenter",
+    minWidth: 120,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "cabinet",
+    headerName: "Cabinet",
+    minWidth: 100,
+    flex: 1,
+    filterable: true,
+  },
+  {
+    field: "hypervisor",
+    headerName: "Hypervisor",
+    minWidth: 120,
+    flex: 1,
+    filterable: true,
+  },
+]
+
+// -----------------------------------------
+// 4) The main modal component
+// -----------------------------------------
 export function SystemSelectionModal({
   isOpen,
   onClose,
   onAddSystems,
   availableSystems,
 }: SystemSelectionModalProps) {
-  // --- Local state ---
-  const [selectionMethod, setSelectionMethod] = useState<"search" | "bulk">(
-    "search"
-  )
+  // Local state:
+  const [selectionMethod, setSelectionMethod] = useState<"search" | "bulk">("search")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [filteredSystems, setFilteredSystems] = useState<System[]>(availableSystems)
   const [selectedSystemIds, setSelectedSystemIds] = useState<string[]>([])
@@ -62,25 +135,27 @@ export function SystemSelectionModal({
 
   const { showToast } = useToast()
 
-  // --- 4) Filter as user types ---
+  // Whenever “searchQuery” or “selectionMethod” or “availableSystems” changes,
+  // re-compute filteredSystems for search mode:
   useEffect(() => {
     if (selectionMethod === "search") {
       if (!searchQuery.trim()) {
         setFilteredSystems(availableSystems)
       } else {
         const q = searchQuery.toLowerCase()
-        const matched = availableSystems.filter(
-          (system) =>
-            system.id.toLowerCase().includes(q) ||
-            system.desktopName.toLowerCase().includes(q) ||
-            system.user.toLowerCase().includes(q)
-        )
+        const matched = availableSystems.filter((sys) => {
+          return (
+            sys.id.toLowerCase().includes(q) ||
+            sys.desktopName.toLowerCase().includes(q) ||
+            sys.user.toLowerCase().includes(q)
+          )
+        })
         setFilteredSystems(matched)
       }
     }
   }, [searchQuery, selectionMethod, availableSystems])
 
-  // --- 5) CSV upload parsing (bulk mode) ---
+  // CSV upload handler (Bulk mode)
   const handleFileUpload = useCallback(
     (file: File) => {
       setUploadedFile(file)
@@ -92,14 +167,14 @@ export function SystemSelectionModal({
           .split("\n")
           .map((l) => l.trim())
           .filter((l) => l.length > 0)
-          .slice(0, 10) // limit to first 10 entries for demo
+          .slice(0, 10) // just first 10 for demo
 
-        const matched = availableSystems.filter((system) =>
+        const matched = availableSystems.filter((sys) =>
           lines.some((token) => {
             const lower = token.toLowerCase()
             return (
-              system.id.toLowerCase().includes(lower) ||
-              system.desktopName.toLowerCase().includes(lower)
+              sys.id.toLowerCase().includes(lower) ||
+              sys.desktopName.toLowerCase().includes(lower)
             )
           })
         )
@@ -116,7 +191,7 @@ export function SystemSelectionModal({
     [availableSystems, showToast]
   )
 
-  // --- 6) Add selected systems to parent + reset state ---
+  // “Add to Migration List” button
   const handleAddToMigrationList = () => {
     const toAdd = filteredSystems.filter((sys) =>
       selectedSystemIds.includes(sys.id)
@@ -130,7 +205,7 @@ export function SystemSelectionModal({
     setFilteredSystems(availableSystems)
   }
 
-  // --- 7) When toggling selection method ---
+  // Toggle between “search” and “bulk”
   const handleMethodChange = (method: "search" | "bulk") => {
     setSelectionMethod(method)
     setSelectedSystemIds([])
@@ -139,9 +214,11 @@ export function SystemSelectionModal({
     setFilteredSystems(availableSystems)
   }
 
-  // --- Pagination (optional) – if you'd like to show pages in the table --- 
-  // For simplicity, we’ll show all filteredSystems in one scrollable table. 
-  // If you prefer pagination, slice filteredSystems here and maintain currentPage state.
+  // When DataGrid selection changes, update selectedSystemIds
+  const handleSelectionModelChange = (newSelection: DataGridRowSelectionModel) => {
+    // GSUI DataGrid returns an array of selected row IDs (strings)
+    setSelectedSystemIds(newSelection as string[])
+  }
 
   return (
     <Modal
@@ -149,7 +226,7 @@ export function SystemSelectionModal({
       onVisibilityToggle={onClose}
       className="w-full max-w-6xl mx-auto my-6"
     >
-      {/* === Header (title + optional description) === */}
+      {/* Header */}
       <ModalHeader className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
         <h2 className="text-2xl font-semibold">
           Select Systems to Schedule Migration
@@ -163,9 +240,9 @@ export function SystemSelectionModal({
         </button>
       </ModalHeader>
 
-      {/* === Body === */}
+      {/* Body */}
       <ModalBody className="px-6 py-4 space-y-6 max-h-[85vh] overflow-y-auto">
-        {/* ---- 1) Selection Method Radios ---- */}
+        {/* 1) Selection Method Radios */}
         <div className="space-y-2">
           <Label className="text-base font-medium">Selection Method</Label>
           <div className="flex space-x-8">
@@ -196,7 +273,7 @@ export function SystemSelectionModal({
           </div>
         </div>
 
-        {/* ---- 2) Search Input (if in “search” mode) ---- */}
+        {/* 2) Search Input (if “search” mode) */}
         {selectionMethod === "search" && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -209,7 +286,7 @@ export function SystemSelectionModal({
           </div>
         )}
 
-        {/* ---- 3) Bulk Upload Zone (if in “bulk” mode) ---- */}
+        {/* 3) Bulk Upload Zone (if “bulk” mode) */}
         {selectionMethod === "bulk" && (
           <div className="space-y-4">
             {uploadedFile ? (
@@ -289,125 +366,25 @@ export function SystemSelectionModal({
           </div>
         )}
 
-        {/* ---- 4) Results Table (always shown) ---- */}
-        <div className="border border-gray-200 rounded-md overflow-y-auto h-[400px]">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
-              <tr>
-                <th className="px-4 py-2 w-10">
-                  <Checkbox
-                    checked={
-                      filteredSystems.length > 0 &&
-                      filteredSystems.every((sys) =>
-                        selectedSystemIds.includes(sys.id)
-                      )
-                    }
-                    onChange={(e) => {
-                      const checked = (e.target as HTMLInputElement).checked
-                      if (checked) {
-                        setSelectedSystemIds(
-                          filteredSystems.map((sys) => sys.id)
-                        )
-                      } else {
-                        setSelectedSystemIds([])
-                      }
-                    }}
-                  />
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  ID
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  User
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  Division
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  Department
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  Desktop Name
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  Caliber
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  Pool
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  OS
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                  Last Seen
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredSystems.map((sys) => (
-                <tr
-                  key={sys.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <td className="px-4 py-3">
-                    <Checkbox
-                      checked={selectedSystemIds.includes(sys.id)}
-                      onChange={(e) => {
-                        const checked = (e.target as HTMLInputElement).checked
-                        if (checked) {
-                          setSelectedSystemIds((prev) => [...prev, sys.id])
-                        } else {
-                          setSelectedSystemIds((prev) =>
-                            prev.filter((id) => id !== sys.id)
-                          )
-                        }
-                      }}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.id}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.user}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.division}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.department}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.desktopName}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.caliber}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.pool}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.os}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                    {sys.lastSeen}
-                  </td>
-                </tr>
-              ))}
-              {filteredSystems.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={10}
-                    className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    No systems found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* 4) The GSUI DataGrid replaces the old <table> */}
+        <div className="border border-gray-200 rounded-md overflow-auto h-[450px]">
+          <DataGrid<System>
+            rows={filteredSystems}
+            columns={columns}
+            getRowId={(row) => row.id} // tell DataGrid which field is the ID
+            checkboxSelection
+            disableColumnMenu={false}      // allow column menu (so filter icon appears)
+            onRowSelectionModelChange={handleSelectionModelChange}
+            rowSelectionModel={selectedSystemIds}
+            autoHeight={false}             // keep the fixed container height; grid will scroll
+            pageSize={7}
+            rowsPerPageOptions={[7, 14, 21]}
+            pagination
+            filterMode="client"            // do client-side filtering inside DataGrid
+          />
         </div>
 
-        {/* ---- 5) Selected Systems Summary (if any) ---- */}
+        {/* 5) Selected Systems Summary */}
         {selectedSystemIds.length > 0 && (
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
             <p className="text-blue-800 dark:text-blue-200 font-medium">
@@ -418,7 +395,7 @@ export function SystemSelectionModal({
         )}
       </ModalBody>
 
-      {/* === Footer === */}
+      {/* Footer Buttons */}
       <ModalFooter className="flex justify-end space-x-4 px-6 py-4 border-t border-gray-200">
         <Button
           className="border border-gray-700 text-gray-700 hover:bg-gray-100"
