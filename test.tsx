@@ -1,31 +1,44 @@
-// src/components/PageLayout.tsx
-import React, { ReactNode } from "react";
-import AppHeader from "./AppHeader";
+// src/components/ScheduleMigration/ScheduleMigrationPage.tsx
+"use client";
 
-interface PageLayoutProps {
-  children: ReactNode;
-}
+import React, { useState } from "react";
+import PageLayout from "../PageLayout";
+import { Button } from "@gs-ux-uitoolkit-react/button";
+import { FaPlus } from "react-icons/fa";
+import SystemSelectionModal from "./SystemSelectionModal";
 
-const PageLayout: React.FC<PageLayoutProps> = ({ children }) => {
+export default function ScheduleMigrationPage() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="flex flex-col h-screen">
-      {/* your existing header/nav */}
-      <AppHeader />
-
-      {/* flex‐1 = take all remaining vertical space; overflow‐auto allows scrolling if content is too tall */}
-      <main className="flex-1 overflow-auto bg-gray-50">
-        {/* 
-          max-w-screen-xl: cap width on very wide monitors 
-          mx-auto: center horizontally 
-          px-4 sm:px-6 lg:px-8: responsive side padding 
-          py-6: top/bottom padding
-        */}
-        <div className="max-w-screen-xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-          {children}
+    <PageLayout>
+      {/* page header & action */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 space-y-4 md:space-y-0">
+        <div>
+          <h1 className="text-3xl font-bold">Schedule Migration</h1>
+          <p className="text-gray-600">Add systems and schedule migrations</p>
         </div>
-      </main>
-    </div>
-  );
-};
+        <Button
+          onClick={() => setOpen(true)}
+          variant="primary"
+          leftIcon={<FaPlus />}
+        >
+          Add Systems for Migration
+        </Button>
+      </div>
 
-export default PageLayout;
+      {/* empty state */}
+      <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+        <FaPlus size={64} className="text-gray-300" />
+        <h2 className="text-xl font-semibold text-gray-700">No systems selected</h2>
+        <p className="text-gray-500">
+          Get started by adding systems to your migration list
+        </p>
+        <Button onClick={() => setOpen(true)}>Add Systems for Migration</Button>
+      </div>
+
+      {/* modal */}
+      <SystemSelectionModal isOpen={open} onClose={() => setOpen(false)} />
+    </PageLayout>
+  );
+}
