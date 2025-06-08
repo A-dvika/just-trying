@@ -1,55 +1,34 @@
-## Week 1 Documentation: Migration Portal Project
+## Week 2 Documentation: Migration Portal Project
 
-### Project Overview
+### Conversations and Findings
 
-The Migration Portal Project aims to streamline the process of migrating computer systems, primarily focused on:
+#### Discussion with Harsha Jotwani
 
-* **Windows 10 to Windows 11 migration**
-* **Windows Patch Migration** to avoid end-of-life system vulnerabilities
-* **Migration to Cloud (NDS.Next)** for enhanced scalability and efficiency
+Currently, users manually copy and paste NDS names or user IDs from external CSV files into the search bar individually to select systems. This method is inefficient, particularly for bulk searches.
 
-### Understanding the Reasons for Migrations
+#### Suggested Feature Enhancement
 
-Migrations are critical for:
+To address this issue, the following enhancements are proposed:
 
-* **Security**: Updating systems to mitigate vulnerabilities from outdated software.
-* **Compliance**: Ensuring all systems meet current regulatory and operational standards.
-* **Performance**: Upgrading systems to enhance performance and user productivity.
+* **Drag-and-Drop File Import**: Allow users to import CSV files directly into the portal.
+* **File Validation**: Implement checks to ensure the uploaded file contains only NDS names or user IDs.
+* **Automated Bulk Search**: Post-import, the portal automatically filters and searches, displaying relevant system details efficiently.
 
-### Types of Migrations Required
+### Feedback from Justin Smith (Portal User)
 
-* **OS Migration**: Transitioning from Windows 10 to Windows 11.
-* **Patch Migration**: Systematic deployment of necessary software updates.
-* **Cloud Migration**: Transitioning on-premise infrastructure to cloud solutions (NDS.Next).
+Key feedback and requests from the user included:
 
-### Need for a Dedicated Migration Portal
+* Difficulty in tracking migration status.
+* Need for improved UI to schedule, monitor, and track migrations clearly.
+* Necessity for a retry mechanism when migrations get stuck, alongside detailed logging to diagnose and resolve issues.
+* Requirement for user-specific search capabilities, filtering by username, and an aggregation view.
+* Improved cancellation workflow, specifically allowing cancellations only before approval.
 
-A dedicated migration portal is essential to:
+### New Workflow and UI Implementation
 
-* Centralize management of migration processes.
-* Enhance transparency and monitoring of migration tasks.
-* Simplify the user experience, thereby reducing potential errors and downtime.
+A new workflow was designed based on user feedback, detailed through the provided images. The project's next phase involves:
 
-### Identified Issues in the Existing Portal
+* **Implementing a User-Friendly UI** using the GS UI toolkit.
+* **Backend Integration**: Connecting the search system to the backend to enable real-time data retrieval and filtering.
 
-* **Poor User Interface**: Current UI lacks clarity, is outdated, and difficult to navigate.
-* **Lack of User Friendliness**: Users struggle with intuitive navigation and task completion.
-* **Inefficient Workflow**: Existing workflows create unnecessary complexity, causing delays and user dissatisfaction.
-
-### Designing Workflow for the New Portal
-
-To overcome these issues, a streamlined workflow will be designed, incorporating:
-
-* Clear step-by-step guidance for each migration type.
-* Enhanced visual cues and intuitive interactions.
-* Effective feedback mechanisms to track migration progress and status.
-
-### Development of New Portal from Scratch
-
-The project necessitates the creation of an entirely new migration portal, built with modern technology stacks and best practices, ensuring:
-
-* **Improved User Experience**: Intuitive and accessible interfaces.
-* **Robust Performance**: Optimized backend infrastructure.
-* **Scalability and Flexibility**: Easy incorporation of future updates and functionalities.
-
-This document outlines the initial phase and establishes clear objectives and requirements for successful project execution moving forward.
+This week focused significantly on enhancing usability, efficiency, and reliability, laying a strong foundation for an effective migration portal.
