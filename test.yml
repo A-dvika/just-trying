@@ -1,8 +1,5 @@
 # .gitlab-ci.yml
 
-#──────────────────────────────────────────────────────────────────────────────
-#  GLOBAL CONFIG
-#──────────────────────────────────────────────────────────────────────────────
 stages:
   - build
   - clmscan
@@ -10,7 +7,6 @@ stages:
   - site_deploy
   - environment
 
-# use your internal Node image—no pull (must be pre-cached on your runners)
 image:
   name: registry.aws.site.gs.com:443/dx/js-eng/nodejs-container-images/ubi-rhel20-node20-chrome:current
   pull_policy: never
@@ -22,7 +18,7 @@ cache:
     - .vite/
 
 #──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE JOBS
+# TEMPLATE JOBS
 #──────────────────────────────────────────────────────────────────────────────
 .upload_assets: &upload_assets
   stage: upload_assets
@@ -57,13 +53,12 @@ cache:
 
 
 #──────────────────────────────────────────────────────────────────────────────
-#  1) Build → lint, test, bundle, pack
+# 1) Build → lint, test, bundle, pack
 #──────────────────────────────────────────────────────────────────────────────
-build_frontend:
+build:
   stage: build
   tags: [default, linux, kubernetes]
   script:
-    - cd frontend
     - echo -e "\n\033[1;33m➤ Installing dependencies (Node $(node -v))...\033[0m"
     - npm ci
     - echo -e "\n\033[1;34m=== 🔍 Linting Source Code ===\033[0m"
@@ -76,124 +71,120 @@ build_frontend:
     - npm pack
   artifacts:
     paths:
-      - frontend/dist
-      - frontend/junit-report.xml
+      - dist/
+      - junit-report.xml
     expire_in: 1 week
   rules:
-    - if: '$CI_COMMIT_REF_NAME =~ /^release-frontend-.*$/'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release-.*$/'
       changes:
-        - frontend/**/*
-
+        - "**/*"
 
 #──────────────────────────────────────────────────────────────────────────────
-#  2) CLM Scan (needs build)
+# 2) CLM Scan (needs build)
 #──────────────────────────────────────────────────────────────────────────────
-request_clmscan_frontend:
+request_clmscan:
   stage: clmscan
   tags: [default, linux, kubernetes]
   image: gitlab.registry.docker.site.gs.com:443/dx/sdlc-tools/gitlab-clm-plugin/gitlab-clm-plugin:current
   script:
-    - /opt/clm/request-clmscan.sh "$CI_PROJECT_DIR/frontend/dist"
+    - /opt/clm/request-clmscan.sh "$CI_PROJECT_DIR/dist"
   needs:
-    - build_frontend
+    - build
   rules:
-    - if: '$CI_COMMIT_REF_NAME =~ /^release-frontend-.*$/'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release-.*$/'
       changes:
-        - frontend/**/*
-
+        - "**/*"
 
 #──────────────────────────────────────────────────────────────────────────────
-#  3) Upload Static Assets
+# 3) Upload Static Assets
 #──────────────────────────────────────────────────────────────────────────────
-static_assets_frontend:
+static_assets:
   variables:
-    STATIC_ASSETS: frontend/dist
+    STATIC_ASSETS: dist
 
-upload_assets_frontend:
+upload_assets:
   <<: *upload_assets
   needs:
-    - build_frontend
-    - request_clmscan_frontend
+    - build
+    - request_clmscan
   rules:
-    - if: '$CI_COMMIT_REF_NAME =~ /^release-frontend-.*$/'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release-.*$/'
       changes:
-        - frontend/**/*
-
+        - "**/*"
 
 #──────────────────────────────────────────────────────────────────────────────
-#  4) Site Deploy (feature & master branches)
+# 4) Site Deploy (feature & master branches)
 #──────────────────────────────────────────────────────────────────────────────
-site_deploy_feature_frontend:
+site_deploy_feature:
   <<: *site_deploy
   variables:
-    DID: 123456                # your DEV DID
-    siteDeployConfigPath: "./frontend/siteDeployConfig.json"
-    envIdentifier: "frontend-feature-branch"
+    DID: 123456
+    siteDeployConfigPath: "./siteDeployConfig.json"
+    envIdentifier: "feature-branch"
   rules:
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "master"'
       changes:
-        - frontend/**/*
+        - "**/*"
   when: manual
   needs:
-    - upload_assets_frontend
+    - upload_assets
 
-site_deploy_master_frontend:
+site_deploy_master:
   <<: *site_deploy
   variables:
-    DID: 123456                # your PROD DID
-    siteDeployConfigPath: "./frontend/siteDeployConfig.json"
-    envIdentifier: "frontend-master-branch"
+    DID: 654321
+    siteDeployConfigPath: "./siteDeployConfig.json"
+    envIdentifier: "master-branch"
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       changes:
-        - frontend/**/*
+        - "**/*"
   needs:
-    - upload_assets_frontend
-
+    - upload_assets
 
 #──────────────────────────────────────────────────────────────────────────────
-#  5) Dynamic Environments (create & stop)
+# 5) Dynamic Environments (create & stop)
 #──────────────────────────────────────────────────────────────────────────────
-environment_feature_frontend:
+environment_feature:
   <<: *create_env
   variables:
-    envIdentifier: "frontend-feature-branch"
+    envIdentifier: "feature-branch"
   environment:
-    name: feature/frontend/$CI_COMMIT_REF_NAME
-    on_stop: stop_environment_feature_frontend
+    name: feature/$CI_COMMIT_REF_NAME
+    on_stop: stop_environment_feature
   rules:
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "master"'
       changes:
-        - frontend/**/*
+        - "**/*"
 
-stop_environment_feature_frontend:
+stop_environment_feature:
   <<: *stop_env
   variables:
-    envIdentifier: "frontend-feature-branch"
+    envIdentifier: "feature-branch"
   environment:
-    name: feature/frontend/$CI_COMMIT_REF_NAME
+    name: feature/$CI_COMMIT_REF_NAME
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-environment_master_frontend:
+environment_master:
   <<: *create_env
   variables:
-    envIdentifier: "frontend-master-branch"
+    envIdentifier: "master-branch"
   environment:
-    name: master/frontend/$CI_COMMIT_REF_NAME
-    on_stop: stop_environment_master_frontend
+    name: master/$CI_COMMIT_REF_NAME
+    on_stop: stop_environment_master
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       changes:
-        - frontend/**/*
+        - "**/*"
 
-stop_environment_master_frontend:
+stop_environment_master:
   <<: *stop_env
   variables:
-    envIdentifier: "frontend-master-branch"
+    envIdentifier: "master-branch"
   environment:
-    name: master/frontend/$CI_COMMIT_REF_NAME
+    name: master/$CI_COMMIT_REF_NAME
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       changes:
-        - frontend/**/*
+        - "**/*"
