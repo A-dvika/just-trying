@@ -1,34 +1,54 @@
-## Week 2 Documentation: Migration Portal Project
+# .gitlab-ci.yml
+image: node:18
 
-### Conversations and Findings
+stages:
+  - lint
+  - test
+  - build
 
-#### Discussion with Harsha Jotwani
+# Cache your node modules and Vite cache to speed up CI runs
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - node_modules/
+    - .vite/
 
-Currently, users manually copy and paste NDS names or user IDs from external CSV files into the search bar individually to select systems. This method is inefficient, particularly for bulk searches.
+before_script:
+  # Install fresh dependencies each run
+  - echo -e "\n\033[1;33m➤ Installing dependencies...\033[0m"
+  - npm ci
 
-#### Suggested Feature Enhancement
+lint:
+  stage: lint
+  script:
+    - echo -e "\n\033[1;34m=== 🔍 Linting Source Code ===\033[0m"
+    - npm run lint
+    - echo -e "\033[1;32m✔ Linting passed!\033[0m"
+  allow_failure: false
+  artifacts:
+    when: always
+    reports:
+      dotenv: lint-report.env
 
-To address this issue, the following enhancements are proposed:
+test:
+  stage: test
+  script:
+    - echo -e "\n\033[1;34m=== 🧪 Running Tests ===\033[0m"
+    - npm run test -- --coverage
+    - echo -e "\033[1;32m✔ All tests passed!\033[0m"
+  artifacts:
+    paths:
+      - coverage/
+    reports:
+      junit: jest-results.xml
 
-* **Drag-and-Drop File Import**: Allow users to import CSV files directly into the portal.
-* **File Validation**: Implement checks to ensure the uploaded file contains only NDS names or user IDs.
-* **Automated Bulk Search**: Post-import, the portal automatically filters and searches, displaying relevant system details efficiently.
-
-### Feedback from Justin Smith (Portal User)
-
-Key feedback and requests from the user included:
-
-* Difficulty in tracking migration status.
-* Need for improved UI to schedule, monitor, and track migrations clearly.
-* Necessity for a retry mechanism when migrations get stuck, alongside detailed logging to diagnose and resolve issues.
-* Requirement for user-specific search capabilities, filtering by username, and an aggregation view.
-* Improved cancellation workflow, specifically allowing cancellations only before approval.
-
-### New Workflow and UI Implementation
-
-A new workflow was designed based on user feedback, detailed through the provided images. The project's next phase involves:
-
-* **Implementing a User-Friendly UI** using the GS UI toolkit.
-* **Backend Integration**: Connecting the search system to the backend to enable real-time data retrieval and filtering.
-
-This week focused significantly on enhancing usability, efficiency, and reliability, laying a strong foundation for an effective migration portal.
+build:
+  stage: build
+  script:
+    - echo -e "\n\033[1;34m=== 📦 Building Production Bundle ===\033[0m"
+    - npm run build
+    - echo -e "\033[1;32m✔ Build completed!\033[0m"
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
