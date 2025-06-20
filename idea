@@ -1,0 +1,5 @@
+Title:
+"Making LLMs Reliable: Introducing Retrieval-Augmented Generation"
+
+Description:
+LLMs can sound very confident even when they're wrong! In this session, you'll learn why they sometimes "make things up" and how Retrieval-Augmented Generation (RAG) fixes this by helping LLMs find accurate, up-to-date information. We'll explain RAG simply, clearly, and practically.
