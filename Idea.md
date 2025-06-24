@@ -9,7 +9,21 @@ Perfect — a 30-minute intern-led session should be engaging, informative, and 
 
 > “RAG in Action: How ChatGPT Can Learn from Your Notes, PDFs & Google”
 
+Hi Ruschi,
 
+I hope you’re doing well. My name is Advika Thakur, and I’m a Summer Analyst in the Workplace Engineering team, Engineering Division. I’m currently working on the UI uplift for the NDS portal, which will support both Windows 11 and NDS.Next migrations.
+
+I would like to set up a brief call with Anand Gupta to discuss my internship progress and get his insights on a few topics related to the portal work. Could you please help coordinate a time that fits Anand’s availability over the next week or so? I am flexible and can adjust to his schedule.
+
+Thank you for your assistance. Please let me know if there’s any information you need from me to facilitate the scheduling.
+
+Best regards,
+
+Advika Thakur
+Summer Analyst, Workplace Engineering
+Engineering Division
+Goldman Sachs
+advika.thakur@goldmansachs.com | +91-XXXXXXXXXX
 
 🔹 Why this topic?
 Most people know LLMs are powerful, but don’t know how they can talk to your documents. This session demystifies that and shows practical use cases for enterprises.
