@@ -3,6 +3,7 @@ Below is a concrete, side-by-side view of **(1) your current “classic Redux”
 ---
 
 ## 1 ️⃣  Current layout (classic Redux)
+![file_000000002de461f8a5d02f6a9f46bfb2 (1)](https://github.com/user-attachments/assets/2b6f4d84-0008-4b0b-9045-40577be4db05)
 
 ```
 src/
