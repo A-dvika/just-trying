@@ -135,3 +135,4 @@ export default selectedSystemsSlice.reducer;
 > *Moving from the classic `actions/ + reducers/` folders to feature slices reduces boilerplate \~80 %, co-locates logic, gives us typed actions automatically, and bakes in DevTools + safer immutable updates. We can migrate slice-by-slice without breaking anything.*
 
 Feel free to ping me for a step-by-step plan or PR template for the first slice. Good luck!
+![file_00000000179c61f9b96692d77f58f14c](https://github.com/user-attachments/assets/eb494c4e-93b7-4f60-bdff-b0a05083e79f)
